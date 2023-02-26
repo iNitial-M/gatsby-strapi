@@ -1,0 +1,40 @@
+name: clean_on_pr_closed
+
+on:
+  pull_request:
+    types: [ closed ]
+
+concurrency:
+  group: ci-preview-${{ github.event.pull_request.head.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clean_backend:
+    uses: jalantechnologies/github-ci/.github/workflows/clean.yml@v1.0
+    with:
+      app_name: boilerplate-website-backend
+      app_env: preview
+      branch: ${{ github.event.pull_request.head.ref }}
+      deploy_root: 'lib/kube/backend'
+      deploy_service: digitalocean-kube
+    secrets:
+      docker_registry: docker-registry.platform.jalantechnologies.com/boilerplate-website-backend
+      docker_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_password: ${{ secrets.DOCKER_PASSWORD }}
+      do_access_token: ${{ secrets.DO_ACCESS_TOKEN }}
+      do_cluster_id: ${{ secrets.DO_CLUSTER_ID }}
+
+  clean_frontend:
+    uses: jalantechnologies/github-ci/.github/workflows/clean.yml@v1.0
+    with:
+      app_name: boilerplate-website-frontend
+      app_env: preview
+      branch: ${{ github.event.pull_request.head.ref }}
+      deploy_root: 'lib/kube/frontend'
+      deploy_service: digitalocean-kube
+    secrets:
+      docker_registry: docker-registry.platform.jalantechnologies.com/boilerplate-website-frontend
+      docker_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_password: ${{ secrets.DOCKER_PASSWORD }}
+      do_access_token: ${{ secrets.DO_ACCESS_TOKEN }}
+      do_cluster_id: ${{ secrets.DO_CLUSTER_ID }}

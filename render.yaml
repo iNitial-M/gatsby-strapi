@@ -1,0 +1,98 @@
+services:
+  - type: web
+    name: boilerplate-website-backend
+    env: docker
+    plan: starter
+    branch: main
+    healthCheckPath: /
+    domains:
+      - boilerplate-website-backend.platform.jalantechnologies.com
+    envVars:
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: boilerplate_website_prod
+          property: host
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: boilerplate_website_prod
+          property: database
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: boilerplate_website_prod
+          property: password
+      - key: DATABASE_PORT
+        fromDatabase:
+          name: boilerplate_website_prod
+          property: port
+      - key: DATABASE_USERNAME
+        fromDatabase:
+          name: boilerplate_website_prod
+          property: user
+      - fromGroup: boilerplate-website-backend-production
+    autoDeploy: false
+    rootDir: api
+
+  - type: web
+    name: boilerplate-website-frontend
+    env: docker
+    plan: starter
+    branch: main
+    healthCheckPath: /
+    domains:
+      - boilerplate-website.platform.jalantechnologies.com
+    envVars:
+      - fromGroup: boilerplate-website-frontend-production
+    autoDeploy: false
+
+databases:
+  - name: boilerplate_website_prod
+    plan: starter
+    databaseName: website_prod
+    user: app_user
+
+envVarGroups:
+  - name: boilerplate-website-frontend-production
+    envVars:
+      - key: CI
+        value: true
+      - key: NODE_ENV
+        value: production
+      - key: NODE_CONFIG_ENV
+        value: production
+      - key: STRAPI_API_URL
+        value: https://boilerplate-website-backend.platform.jalantechnologies.com
+      - key: STRAPI_TOKEN
+        sync: false
+
+  - name: boilerplate-website-backend-production
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_CONFIG_ENV
+        value: production
+      - key: STRAPI_APP_HOST
+        value: https://boilerplate-website-backend.platform.jalantechnologies.com
+      - key: PORT
+        value: 1337
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_ACCESS_SECRET
+        sync: false
+      - key: AWS_BUCKET
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: STRAPI_ADMIN_EMAIL
+        sync: false
+      - key: STRAPI_ADMIN_JWT_SECRET
+        sync: false
+      - key: STRAPI_ADMIN_PASSWORD
+        sync: false
+      - key: STRAPI_API_TOKEN_SALT
+        sync: false
+      - key: STRAPI_APP_KEYS
+        sync: false
+      - key: STRAPI_RUN_INIT
+        sync: false

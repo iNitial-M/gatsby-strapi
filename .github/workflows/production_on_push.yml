@@ -1,0 +1,51 @@
+name: production_on_push
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-production-${{ github.event.ref }}
+  cancel-in-progress: true
+
+jobs:
+  production_backend:
+    uses: jalantechnologies/github-ci/.github/workflows/ci.yml@v1.0
+    with:
+      app_name: boilerplate-website-backend
+      app_env: production
+      app_hostname: 'boilerplate-website-backend.platform.jalantechnologies.com'
+      branch: ${{ github.event.ref }}
+      build_disabled: true
+      #      build_args: |
+      #        CI=true
+      #        NODE_ENV=production
+      #      build_context: 'api'
+      #      deploy_root: 'lib/kube/backend'
+      deploy_service: render
+      steps: 'deploy'
+    secrets:
+      render_token: ${{ secrets.RENDER_TOKEN }}
+      render_service_id: ${{ secrets.RENDER_BACKEND_SERVICE_ID }}
+
+  production_frontend:
+    uses: jalantechnologies/github-ci/.github/workflows/ci.yml@v1.0
+    needs: 'production_backend'
+    with:
+      app_name: boilerplate-website-frontend
+      app_env: production
+      app_hostname: 'boilerplate-website.platform.jalantechnologies.com'
+      branch: ${{ github.event.ref }}
+      build_disabled: true
+      #      build_args: |
+      #        CI=true
+      #        NODE_ENV=production
+      #        STRAPI_API_URL=${{ needs.production_backend.outputs.deploy_url }}
+      #        STRAPI_TOKEN=${{ vars.STRAPI_PRODUCTION_TOKEN }}
+      #      deploy_root: 'lib/kube/frontend'
+      deploy_service: render
+      steps: 'deploy'
+    secrets:
+      render_token: ${{ secrets.RENDER_TOKEN }}
+      render_service_id: ${{ secrets.RENDER_FRONTEND_SERVICE_ID }}

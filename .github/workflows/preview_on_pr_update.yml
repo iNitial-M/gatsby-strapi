@@ -1,0 +1,63 @@
+name: preview_on_pr_update
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+concurrency:
+  group: ci-preview-${{ github.event.pull_request.head.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview_backend:
+    uses: jalantechnologies/github-ci/.github/workflows/ci.yml@v1.0
+    # only run when updating an 'Open' PR
+    if: github.event.pull_request.state == 'open'
+    with:
+      analyze_base: main
+      app_name: boilerplate-website-backend
+      app_env: preview
+      app_hostname: '{1}-backend.preview.platform.jalantechnologies.com'
+      branch: ${{ github.event.pull_request.head.ref }}
+      build_context: 'api'
+      build_args: |
+        CI=true
+        NODE_ENV=production
+      deploy_root: 'lib/kube/backend'
+      deploy_service: digitalocean-kube
+      pull_request_number: ${{ github.event.number }}
+      steps: 'deploy'
+    secrets:
+      docker_registry: docker-registry.platform.jalantechnologies.com/boilerplate-website-backend
+      docker_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_password: ${{ secrets.DOCKER_PASSWORD }}
+      doppler_token: ${{ secrets.DOPPLER_PREVIEW_TOKEN }}
+      do_access_token: ${{ secrets.DO_ACCESS_TOKEN }}
+      do_cluster_id: ${{ secrets.DO_CLUSTER_ID }}
+
+  preview_frontend:
+    uses: jalantechnologies/github-ci/.github/workflows/ci.yml@v1.0
+    needs: 'preview_backend'
+    # only run when updating an 'Open' PR
+    if: github.event.pull_request.state == 'open'
+    with:
+      analyze_base: main
+      app_name: boilerplate-website-frontend
+      app_env: preview
+      app_hostname: '{1}-website.preview.platform.jalantechnologies.com'
+      branch: ${{ github.event.pull_request.head.ref }}
+      build_args: |
+        CI=true
+        NODE_ENV=production
+        STRAPI_API_URL=${{ needs.preview_backend.outputs.deploy_url }}
+        STRAPI_TOKEN=${{ vars.STRAPI_PREVIEW_TOKEN }}
+      deploy_root: 'lib/kube/frontend'
+      deploy_service: digitalocean-kube
+      pull_request_number: ${{ github.event.number }}
+      steps: 'deploy'
+    secrets:
+      docker_registry: docker-registry.platform.jalantechnologies.com/boilerplate-website-frontend
+      docker_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_password: ${{ secrets.DOCKER_PASSWORD }}
+      do_access_token: ${{ secrets.DO_ACCESS_TOKEN }}
+      do_cluster_id: ${{ secrets.DO_CLUSTER_ID }}
